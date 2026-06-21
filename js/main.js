@@ -27,22 +27,30 @@ var editIndex = null;
 // Create
 
 var addContact = function () {
-     if (fullName.value === "" || phoneNumber.value === "" || emailAddress.value === "" || address.value === "" ) {
-       Swal.fire({
-  icon: "error",
-  title: "Missing ",
-  text: "Please enter a name for the contact!!",
- 
-});
+    var nameVal = fullName.value.trim();
+    var phoneVal = phoneNumber.value.trim();
+
+    if (nameVal === "" || phoneVal === "" || emailAddress.value === "" || address.value === "") {
+        Swal.fire({ icon: "error", title: "Missing fields", text: "Please fill all required fields." });
+        return;
+    }
+
+    if (!validateName(nameVal)) {
+        Swal.fire({ icon: "error", title: "Invalid name", text: "Please enter a valid name (letters and spaces only, min 2 characters)." });
+        return;
+    }
+
+    if (!validatePhone(phoneVal)) {
+        Swal.fire({ icon: "error", title: "Invalid phone", text: "Please enter a valid Palestinian mobile number (e.g. 0591234567 or +970591234567)." });
         return;
     }
 
 
     var contact = {
-        fullName: fullName.value,
-        phoneNumber: phoneNumber.value,
-        emailAddress: emailAddress.value,
-        address: address.value,
+        fullName: nameVal,
+        phoneNumber: normalizePalestinianPhone(phoneVal),
+        emailAddress: emailAddress.value.trim(),
+        address: address.value.trim(),
         group: group.value,
         notes: notes.value,
         isFavorite: favoriteCheckbox.checked,
@@ -290,3 +298,18 @@ function toggleEmergency(index) {
     localStorage.setItem("allContacts", JSON.stringify(contactsArr));
     displayContact();
 }
+
+function validateName(name) {
+    if (!name || name.length < 2) return false;
+    // Allow letters (unicode), spaces, hyphens and apostrophes
+    return /^[\p{L} '-]+$/u.test(name.trim());
+}
+
+function validatePhone(phone) {
+    var norm = normalizePalestinianPhone(String(phone));
+    if (!/^[0-9]+$/.test(norm)) return false;
+    // Palestinian mobile numbers typically: 0591234567 (10 digits, starts with 05)
+    if (norm.length === 10 && norm.startsWith('05')) return true;
+    return false;
+}
+
